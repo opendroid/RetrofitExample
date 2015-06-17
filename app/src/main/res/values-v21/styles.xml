@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="AppTheme.Base">
+        <!-- Customize your theme here. -->
+        <item name="android:colorPrimary">@color/primaryAppColor</item>
+        <item name="android:colorPrimaryDark">@color/primaryAppColorDark</item>
+        <item name="android:textColorPrimary">#FA5E85</item>
+        <item name="android:navigationBarColor">@color/naviationBarAppColor</item>
+        <item name="android:colorAccent">@color/accentColor</item>
+    </style>
+</resources>
