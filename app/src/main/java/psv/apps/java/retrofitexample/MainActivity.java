@@ -60,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // Setup activity reference
-        mActivityRef = new WeakReference<MainActivity>(this);
+        mActivityRef = new WeakReference<>(this);
 
         if (mRetainedAppData.mData != null) {
             updateUXWithWeatherData(mRetainedAppData.mData);
@@ -139,6 +139,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 // Setup UX handlers
+                // Get the UX handlers every time. This is to avoid a condition
+                // when runOnUiThread may not have updated UX handles when screen is rotated.
+                mProgressBar = (ProgressBar) mActivityRef.get().findViewById(R.id.progress_bar_id);
                 mInputCityName = (EditText) mActivityRef.get().findViewById(R.id.input_city_id);
                 mCityNameTextView = (TextView) mActivityRef.get().findViewById(R.id.city_name_id);
                 mCountryNameTextView = (TextView) mActivityRef.get().findViewById(R.id.country_name_id);
@@ -148,6 +151,7 @@ public class MainActivity extends AppCompatActivity {
                 mSunriseTextView = (TextView) mActivityRef.get().findViewById(R.id.sunrise_id);
                 mSunsetTextView = (TextView) mActivityRef.get().findViewById(R.id.sunset_id);
 
+                // Refresh UX data
                 mProgressBar.setVisibility(View.INVISIBLE);
                 mCityNameTextView.setText("City: " + data.getName());
                 mCountryNameTextView.setText("Country: " + data.getCountry());
@@ -165,12 +169,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * This is main class object that should save all data.
+     * This is main class object that should save all data upon configuration changes.
+     * This object is saved by the 'onRetainCustomNonConfigurationInstance' method.
      */
     private class RetainedAppData {
-        private WeatherData mData;
-        private AtomicBoolean mInProgress = new AtomicBoolean(false);
-        private GetWeatherRestAdapter mGetWeatherRestAdapter;
+        private WeatherData mData; // Weather data received
+        private AtomicBoolean mInProgress = new AtomicBoolean(false); // Is a download in progress
+        private GetWeatherRestAdapter mGetWeatherRestAdapter; // REST Adapter
         private Callback<WeatherData> mWeatherDataCallback = new Callback<WeatherData>() {
             @Override
             public void success(WeatherData data, Response response) {
@@ -187,11 +192,12 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void failure(RetrofitError error) {
                 Log.d(TAG,"failure: " + error);
+                mInProgress.set(false);
             }
         };
-
+        // Method to test Async. call
         public void runRetrofitTestAsync (final String city) {
-            if (mInProgress.get() == true) {
+            if (mInProgress.get()) {
                 Toast.makeText(getApplicationContext(),"Weather fetch in progress.",
                         Toast.LENGTH_LONG).show();
                 return;
@@ -202,8 +208,9 @@ public class MainActivity extends AppCompatActivity {
             mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
         }
 
+        // Method to test sync. call
         public void runRetrofitTestSync (final String city) {
-            if (mInProgress.get() == true) {
+            if (mInProgress.get()) {
                 Toast.makeText(getApplicationContext(),"Weather fetch in progress.",
                         Toast.LENGTH_LONG).show();
                 return;
@@ -215,19 +222,34 @@ public class MainActivity extends AppCompatActivity {
                 mGetWeatherRestAdapter = new GetWeatherRestAdapter();
 
             // Test Sync version -- in a separate thread
+            // Not doing this will crash the app. As Retro sync calls can not be made from
+            // UI thread.
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    // Call Async API
-                    WeatherData data = mGetWeatherRestAdapter.testWeatherApiSync(city);
-                    Log.d(TAG,"Sync: Data: cod:" + data.getName() + ", cod:" + data.getCod()
-                            + ",Coord: (" + data.getLat() + "," + data.getLon()
-                            + "), Temp:" + data.getTemp()
-                            + "\nSunset:" + data.getSunset() + ", " + data.getSunrise()
-                            + ", Country:" + data.getCountry());
-                    mData = data;
-                    updateUXWithWeatherData(mData);
-                    mInProgress.set(false);
+                    try {
+                        // Call Async API
+                        WeatherData data = mGetWeatherRestAdapter.testWeatherApiSync(city);
+                        Log.d(TAG, "Sync: Data: cod:" + data.getName() + ", cod:" + data.getCod()
+                                + ",Coord: (" + data.getLat() + "," + data.getLon()
+                                + "), Temp:" + data.getTemp()
+                                + "\nSunset:" + data.getSunset() + ", " + data.getSunrise()
+                                + ", Country:" + data.getCountry());
+                        mData = data;
+                        updateUXWithWeatherData(mData);
+                    } catch (Exception ex) {
+                        Log.e(TAG, "Sync: exception", ex);
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mProgressBar = (ProgressBar) mActivityRef.get().
+                                        findViewById(R.id.progress_bar_id);
+                                mProgressBar.setVisibility(View.INVISIBLE);
+                            }
+                        });
+                    } finally {
+                        mInProgress.set(false);
+                    }
                 }
             }).start();
         }
