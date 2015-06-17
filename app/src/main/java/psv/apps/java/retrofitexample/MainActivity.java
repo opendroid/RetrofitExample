@@ -228,7 +228,9 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public void run() {
                     try {
-                        // Call Async API
+                        // Call Async API -- always call in a try block if you dont want app to
+                        // crash. You get 'HTTP/1.1 500 Internal Server Error' more often than
+                        // you think.
                         WeatherData data = mGetWeatherRestAdapter.testWeatherApiSync(city);
                         Log.d(TAG, "Sync: Data: cod:" + data.getName() + ", cod:" + data.getCod()
                                 + ",Coord: (" + data.getLat() + "," + data.getLon()
