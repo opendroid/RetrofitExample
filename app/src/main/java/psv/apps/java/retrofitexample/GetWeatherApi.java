@@ -11,8 +11,10 @@ public interface GetWeatherApi {
     @GET("/data/2.5/weather")
     void getWeatherFromApi (
             @Query("q") String cityName,
+            @Query("APPID") String appId,
             Callback<WeatherData> callback);
     @GET("/data/2.5/weather")
     WeatherData getWeatherFromApiSync (
-            @Query("q") String cityName);
+            @Query("q") String cityName,
+            @Query("APPID") String appId);
 }

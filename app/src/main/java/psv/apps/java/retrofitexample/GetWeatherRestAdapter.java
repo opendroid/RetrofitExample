@@ -13,6 +13,7 @@ public class GetWeatherRestAdapter {
     protected RestAdapter mRestAdapter;
     protected GetWeatherApi mApi;
     static final String WEATHER_URL="http://api.openweathermap.org";
+    static final String OPEN_WEATHER_API = "51337ba29f38cb7a5664cda04d84f4cd";
 
     public GetWeatherRestAdapter() {
         mRestAdapter = new RestAdapter.Builder()
@@ -26,13 +27,13 @@ public class GetWeatherRestAdapter {
 
     public void testWeatherApi(String city, Callback<WeatherData> callback){
         Log.d(TAG, "testWeatherApi: for city:" + city);
-        mApi.getWeatherFromApi(city, callback);
+        mApi.getWeatherFromApi(city, OPEN_WEATHER_API, callback);
     }
 
     public WeatherData testWeatherApiSync(String city) {
-        WeatherData result=null;
+        WeatherData result;
         Log.d(TAG, "testWeatherApi: for city:" + city);
-        result = mApi.getWeatherFromApiSync(city);
+        result = mApi.getWeatherFromApiSync(city,OPEN_WEATHER_API);
         return result;
     }
 }
