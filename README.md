@@ -15,4 +15,5 @@ This is a sample project to show how to use Square Retrofit Library on your Andr
 3. GetWeatherRestAdapter: Defines the REST adapter and also a container for Weather API.
 4. WeatherData: is a plain old java object that mirrors names on the JSON response.
 5. Open issues: Did not check error issues. So app may crash on Retrofit errors.
+6. Openweather now requires you to use their API. Set your own API key in OPEN_WEATHER_API (GetWeatherRestAdapter.java), I have kept mine in case you need to do few minor tests.
 
