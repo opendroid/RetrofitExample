@@ -176,7 +176,7 @@ public class MainActivity extends AppCompatActivity {
      * This object is saved by the 'onRetainCustomNonConfigurationInstance' method.
      */
     private static class RetainedAppData {
-        private static WeakReference<MainActivity> mActivityRef;
+        private  WeakReference<MainActivity> mActivityRef;
         protected final String TAG = "RTD";
         private WeatherData mData; // Weather data received
         private AtomicBoolean mInProgress = new AtomicBoolean(false); // Is a download in progress
@@ -190,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
                         + "\nSunset:" + data.getSunset() + ", " + data.getSunrise()
                         + ", Country:" + data.getCountry());
                 mData = data;
-                if (mActivityRef != null) {
+                if (mActivityRef.get() != null) {
                     mActivityRef.get().updateUXWithWeatherData(mData);
                 }
                 mInProgress.set(false);
@@ -204,7 +204,7 @@ public class MainActivity extends AppCompatActivity {
         };
         // Method to test Async. call
         public void runRetrofitTestAsync (final String city) {
-            if ( (mActivityRef != null) && (mInProgress.get())) {
+            if ( (mActivityRef.get() != null) && (mInProgress.get())) {
                 Toast.makeText(mActivityRef.get(),"Weather fetch in progress.",
                         Toast.LENGTH_LONG).show();
                 return;
