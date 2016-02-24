@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
     private TextView    mTempTextView;
     private TextView    mSunriseTextView;
     private TextView    mSunsetTextView;
-    private static WeakReference<MainActivity> mActivityRef;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,13 +53,16 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(TAG,"onCreate(): Reusing retained data set");
             }
         } else {
-            mProgressBar.setVisibility(View.INVISIBLE);
             mRetainedAppData = new RetainedAppData();
             Log.d(TAG, "onCreate(): Creating new  data set");
         }
 
         // Setup activity reference
-        mActivityRef = new WeakReference<>(this);
+        // mActivityRef = new WeakReference<>(this);
+        mRetainedAppData.setAppContext(this);
+        if (!mRetainedAppData.isFetchInProgress()) {
+            mProgressBar.setVisibility(View.INVISIBLE);
+        }
 
         if (mRetainedAppData.mData != null) {
             updateUXWithWeatherData(mRetainedAppData.mData);
@@ -70,7 +72,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        mActivityRef = null;
+        // mActivityRef = null;
+        mRetainedAppData.setAppContext(null);
         Log.d(TAG,"onDestroy()");
     }
 
@@ -134,22 +137,22 @@ public class MainActivity extends AppCompatActivity {
     }
 
     void updateUXWithWeatherData (final WeatherData data) {
-        if (mActivityRef == null) return;
-        mActivityRef.get().runOnUiThread(new Runnable() {
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 // Setup UX handlers
                 // Get the UX handlers every time. This is to avoid a condition
                 // when runOnUiThread may not have updated UX handles when screen is rotated.
-                mProgressBar = (ProgressBar) mActivityRef.get().findViewById(R.id.progress_bar_id);
-                mInputCityName = (EditText) mActivityRef.get().findViewById(R.id.input_city_id);
-                mCityNameTextView = (TextView) mActivityRef.get().findViewById(R.id.city_name_id);
-                mCountryNameTextView = (TextView) mActivityRef.get().findViewById(R.id.country_name_id);
-                mCodTextView = (TextView) mActivityRef.get().findViewById(R.id.cod_id);
-                mCoordsTextView = (TextView) mActivityRef.get().findViewById(R.id.coords_id);
-                mTempTextView = (TextView) mActivityRef.get().findViewById(R.id.temp_id);
-                mSunriseTextView = (TextView) mActivityRef.get().findViewById(R.id.sunrise_id);
-                mSunsetTextView = (TextView) mActivityRef.get().findViewById(R.id.sunset_id);
+                // 'mActivityRef.get()'
+                mProgressBar = (ProgressBar) findViewById(R.id.progress_bar_id);
+                mInputCityName = (EditText) findViewById(R.id.input_city_id);
+                mCityNameTextView = (TextView) findViewById(R.id.city_name_id);
+                mCountryNameTextView = (TextView) findViewById(R.id.country_name_id);
+                mCodTextView = (TextView) findViewById(R.id.cod_id);
+                mCoordsTextView = (TextView) findViewById(R.id.coords_id);
+                mTempTextView = (TextView) findViewById(R.id.temp_id);
+                mSunriseTextView = (TextView) findViewById(R.id.sunrise_id);
+                mSunsetTextView = (TextView) findViewById(R.id.sunset_id);
 
                 // Refresh UX data
                 mProgressBar.setVisibility(View.INVISIBLE);
@@ -172,7 +175,9 @@ public class MainActivity extends AppCompatActivity {
      * This is main class object that should save all data upon configuration changes.
      * This object is saved by the 'onRetainCustomNonConfigurationInstance' method.
      */
-    private class RetainedAppData {
+    private static class RetainedAppData {
+        private static WeakReference<MainActivity> mActivityRef;
+        protected final String TAG = "RTD";
         private WeatherData mData; // Weather data received
         private AtomicBoolean mInProgress = new AtomicBoolean(false); // Is a download in progress
         private GetWeatherRestAdapter mGetWeatherRestAdapter; // REST Adapter
@@ -185,7 +190,9 @@ public class MainActivity extends AppCompatActivity {
                         + "\nSunset:" + data.getSunset() + ", " + data.getSunrise()
                         + ", Country:" + data.getCountry());
                 mData = data;
-                updateUXWithWeatherData(mData);
+                if (mActivityRef != null) {
+                    mActivityRef.get().updateUXWithWeatherData(mData);
+                }
                 mInProgress.set(false);
             }
 
@@ -197,29 +204,40 @@ public class MainActivity extends AppCompatActivity {
         };
         // Method to test Async. call
         public void runRetrofitTestAsync (final String city) {
-            if (mInProgress.get()) {
-                Toast.makeText(getApplicationContext(),"Weather fetch in progress.",
+            if ( (mActivityRef != null) && (mInProgress.get())) {
+                Toast.makeText(mActivityRef.get(),"Weather fetch in progress.",
                         Toast.LENGTH_LONG).show();
                 return;
             }
             // Get the Adapter
             if (mGetWeatherRestAdapter == null)
                 mGetWeatherRestAdapter = new GetWeatherRestAdapter();
-            mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
+            // Test delay
+            try {
+                Thread.sleep(10000);
+                mInProgress.set(true);
+                mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
+            } catch (Exception e) {
+                Log.d(TAG, "Thread sleep error" + e);
+            }
         }
 
         // Method to test sync. call
         public void runRetrofitTestSync (final String city) {
-            if (mInProgress.get()) {
-                Toast.makeText(getApplicationContext(),"Weather fetch in progress.",
+
+            if ((mActivityRef.get() != null) && (mInProgress.get())) {
+                Toast.makeText(mActivityRef.get(),"Weather fetch in progress.",
                         Toast.LENGTH_LONG).show();
                 return;
             }
-            mInProgress.set(true);
-            mProgressBar.setVisibility(View.VISIBLE);
+            if (mActivityRef.get() != null) {
+                mActivityRef.get().mProgressBar.setVisibility(View.VISIBLE);
+            }
 
             if (mGetWeatherRestAdapter == null)
                 mGetWeatherRestAdapter = new GetWeatherRestAdapter();
+
+            mInProgress.set(true);
 
             // Test Sync version -- in a separate thread
             // Not doing this will crash the app. As Retro sync calls can not be made from
@@ -231,6 +249,7 @@ public class MainActivity extends AppCompatActivity {
                         // Call Async API -- always call in a try block if you dont want app to
                         // crash. You get 'HTTP/1.1 500 Internal Server Error' more often than
                         // you think.
+                        Thread.sleep(10000);
                         WeatherData data = mGetWeatherRestAdapter.testWeatherApiSync(city);
                         Log.d(TAG, "Sync: Data: cod:" + data.getName() + ", cod:" + data.getCod()
                                 + ",Coord: (" + data.getLat() + "," + data.getLon()
@@ -238,22 +257,34 @@ public class MainActivity extends AppCompatActivity {
                                 + "\nSunset:" + data.getSunset() + ", " + data.getSunrise()
                                 + ", Country:" + data.getCountry());
                         mData = data;
-                        updateUXWithWeatherData(mData);
+                        if (mActivityRef.get() != null) {
+                            mActivityRef.get().updateUXWithWeatherData(mData);
+                        }
                     } catch (Exception ex) {
                         Log.e(TAG, "Sync: exception", ex);
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                mProgressBar = (ProgressBar) mActivityRef.get().
-                                        findViewById(R.id.progress_bar_id);
-                                mProgressBar.setVisibility(View.INVISIBLE);
-                            }
-                        });
+                        if (mActivityRef.get() != null) {
+                            mActivityRef.get().runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mActivityRef.get().mProgressBar = (ProgressBar) mActivityRef.get().
+                                            findViewById(R.id.progress_bar_id);
+                                    mActivityRef.get().mProgressBar.setVisibility(View.INVISIBLE);
+                                }
+                            });
+                        }
                     } finally {
                         mInProgress.set(false);
                     }
                 }
             }).start();
+        }
+
+        void setAppContext (MainActivity ref) {
+            mActivityRef = new WeakReference<>(ref);
+        }
+
+        boolean isFetchInProgress() {
+            return mInProgress.get();
         }
     }
 }
