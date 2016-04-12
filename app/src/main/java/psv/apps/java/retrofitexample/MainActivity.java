@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             return;
         }
-        mRetainedAppData.runRetrofitTestSync(city);
+        mRetainedAppData.runRetrofitTestAsync(city);
     }
 
     /**
@@ -214,7 +214,6 @@ public class MainActivity extends AppCompatActivity {
                 mGetWeatherRestAdapter = new GetWeatherRestAdapter();
             // Test delay
             try {
-                Thread.sleep(10000);
                 mInProgress.set(true);
                 mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
             } catch (Exception e) {
