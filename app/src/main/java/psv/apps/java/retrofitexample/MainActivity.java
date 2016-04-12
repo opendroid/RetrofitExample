@@ -122,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
             return;
         }
-        mRetainedAppData.runRetrofitTestSync(city);
+        mRetainedAppData.runRetrofitTestAsync(city);
     }
 
     /**
@@ -184,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
         private Callback<WeatherData> mWeatherDataCallback = new Callback<WeatherData>() {
             @Override
             public void success(WeatherData data, Response response) {
+
                 Log.d(TAG, "Async success: weatherData: Name:" + data.getName() + ", cod:" + data.getCod()
                         + ",Coord: (" + data.getLat() + "," + data.getLon()
                         + "), Temp:" + data.getTemp()
@@ -192,6 +193,14 @@ public class MainActivity extends AppCompatActivity {
                 mData = data;
                 if (mActivityRef.get() != null) {
                     mActivityRef.get().updateUXWithWeatherData(mData);
+                    mActivityRef.get().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mActivityRef.get().mProgressBar = (ProgressBar) mActivityRef.get().
+                                    findViewById(R.id.progress_bar_id);
+                            mActivityRef.get().mProgressBar.setVisibility(View.INVISIBLE);
+                        }
+                    });
                 }
                 mInProgress.set(false);
             }
@@ -200,6 +209,16 @@ public class MainActivity extends AppCompatActivity {
             public void failure(RetrofitError error) {
                 Log.d(TAG,"failure: " + error);
                 mInProgress.set(false);
+                if (mActivityRef.get() != null) {
+                    mActivityRef.get().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mActivityRef.get().mProgressBar = (ProgressBar) mActivityRef.get().
+                                    findViewById(R.id.progress_bar_id);
+                            mActivityRef.get().mProgressBar.setVisibility(View.INVISIBLE);
+                        }
+                    });
+                }
             }
         };
         // Method to test Async. call
@@ -212,9 +231,13 @@ public class MainActivity extends AppCompatActivity {
             // Get the Adapter
             if (mGetWeatherRestAdapter == null)
                 mGetWeatherRestAdapter = new GetWeatherRestAdapter();
+
+            if (mActivityRef.get() != null) {
+                mActivityRef.get().mProgressBar.setVisibility(View.VISIBLE);
+            }
+
             // Test delay
             try {
-                Thread.sleep(10000);
                 mInProgress.set(true);
                 mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
             } catch (Exception e) {
