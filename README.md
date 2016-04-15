@@ -1,12 +1,12 @@
 # RetrofitExample
 
-This is a sample project to show how to use Square Retrofit Library on your Android Programs.
+This is a sample project to show how to use Square Retrofit Library in your Android Apps.
 
-1. MainActivity: Main test activity. Preserves state on rotation of device.
+1. MainActivity: Main test activity. Preserves data and UX state on rotation of device.
      - Uses material design construct by having styles.xml and v21/styles.xml works with colors.xml
      - Handles device rotation well.
-     - Pay attention to runOnUiThread runnable. It takes cars of cases where 'runOnUiThread'
-       may not update UX on roation as Activity may have been recrated.
+     - Pay attention to runOnUiThread runnable. It takes care of cases where 'runOnUiThread'
+       may not update UX on roation as Activity may not have been recreated.
 2. GetWeatherApi: The API to access weather
        - Async API: getWeatherFromApi, results are passed back to caller in a Callback
                                        on a different thread.
