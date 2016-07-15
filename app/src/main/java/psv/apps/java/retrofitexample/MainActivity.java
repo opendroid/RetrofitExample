@@ -60,12 +60,15 @@ public class MainActivity extends AppCompatActivity {
         // Setup activity reference
         // mActivityRef = new WeakReference<>(this);
         mRetainedAppData.setAppContext(this);
-        if (!mRetainedAppData.isFetchInProgress()) {
-            mProgressBar.setVisibility(View.INVISIBLE);
-        }
 
         if (mRetainedAppData.mData != null) {
             updateUXWithWeatherData(mRetainedAppData.mData);
+        }
+        // Setup the progress bar
+        if  (mRetainedAppData.isFetchInProgress()) {
+            mProgressBar.setVisibility(View.VISIBLE);
+        } else {
+            mProgressBar.setVisibility(View.INVISIBLE);
         }
     }
 
@@ -155,7 +158,11 @@ public class MainActivity extends AppCompatActivity {
                 mSunsetTextView = (TextView) findViewById(R.id.sunset_id);
 
                 // Refresh UX data
-                mProgressBar.setVisibility(View.INVISIBLE);
+                if (mRetainedAppData.isFetchInProgress()) {
+                    mProgressBar.setVisibility(View.VISIBLE);
+                } else {
+                    mProgressBar.setVisibility(View.INVISIBLE);
+                }
                 mCityNameTextView.setText("City: " + data.getName());
                 mCountryNameTextView.setText("Country: " + data.getCountry());
                 mCoordsTextView.setText("Coordinates:(" + data.getLat() + "," + data.getLon() + ")");
@@ -174,6 +181,8 @@ public class MainActivity extends AppCompatActivity {
     /**
      * This is main class object that should save all data upon configuration changes.
      * This object is saved by the 'onRetainCustomNonConfigurationInstance' method.
+     *
+     * Note: In the video it is referred to as 'private class TestWeatherData'
      */
     private static class RetainedAppData {
         private  WeakReference<MainActivity> mActivityRef;
