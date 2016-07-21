@@ -2,6 +2,7 @@ package psv.apps.java.retrofitexample;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.support.v7.app.AppCompatActivity;
@@ -19,6 +20,7 @@ import java.lang.ref.WeakReference;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import retrofit.Callback;
@@ -163,17 +165,26 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     mProgressBar.setVisibility(View.INVISIBLE);
                 }
-                mCityNameTextView.setText("City: " + data.getName());
-                mCountryNameTextView.setText("Country: " + data.getCountry());
-                mCoordsTextView.setText("Coordinates:(" + data.getLat() + "," + data.getLon() + ")");
-                mCodTextView.setText("Cod:" + data.getCod());
-                String tempF = String.format("Temperature: %.2f F", (data.getTemp() - 273.15) * 1.8 + 32.00);
+
+                // Print data to Android display
+                Resources res = getResources();
+                String textToPrint = res.getString(R.string.city) + data.getName();
+                mCityNameTextView.setText(textToPrint);
+                textToPrint = res.getString(R.string.country) + data.getCountry();
+                mCountryNameTextView.setText(textToPrint);
+                textToPrint = res.getString(R.string.coordinates) +"(" + data.getLat() + "," + data.getLon() + ")";
+                mCoordsTextView.setText(textToPrint);
+                textToPrint = res.getString(R.string.cod) + data.getCod();
+                mCodTextView.setText(textToPrint);
+                String tempF = String.format(Locale.UK,"Temperature: %.2f F", (data.getTemp() - 273.15) * 1.8 + 32.00);
                 mTempTextView.setText(tempF);
-                DateFormat dfLocalTz = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                DateFormat dfLocalTz = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss", Locale.UK);
                 Date sunriseTime = new Date(data.getSunrise() * 1000);
                 Date sunsetTime = new Date(data.getSunset() * 1000);
-                mSunriseTextView.setText("Sunrise: " + dfLocalTz.format(sunriseTime));
-                mSunsetTextView.setText("Sunset:  " + dfLocalTz.format(sunsetTime));
+                textToPrint = res.getString(R.string.sunrise) + dfLocalTz.format(sunriseTime);
+                mSunriseTextView.setText(textToPrint);
+                textToPrint = res.getString(R.string.sunset) + dfLocalTz.format(sunsetTime);
+                mSunsetTextView.setText(textToPrint);
             }
         });
     }
@@ -189,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         protected final String TAG = "RTD";
         private WeatherData mData; // Weather data received
         private AtomicBoolean mInProgress = new AtomicBoolean(false); // Is a download in progress
-        private GetWeatherRestAdapter mGetWeatherRestAdapter; // REST Adapter
+        private WeatherRestAdapter mWeatherRestAdapter; // REST Adapter
         private Callback<WeatherData> mWeatherDataCallback = new Callback<WeatherData>() {
             @Override
             public void success(WeatherData data, Response response) {
@@ -238,8 +249,8 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             // Get the Adapter
-            if (mGetWeatherRestAdapter == null)
-                mGetWeatherRestAdapter = new GetWeatherRestAdapter();
+            if (mWeatherRestAdapter == null)
+                mWeatherRestAdapter = new WeatherRestAdapter();
 
             if (mActivityRef.get() != null) {
                 mActivityRef.get().mProgressBar.setVisibility(View.VISIBLE);
@@ -248,7 +259,7 @@ public class MainActivity extends AppCompatActivity {
             // Test delay
             try {
                 mInProgress.set(true);
-                mGetWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
+                mWeatherRestAdapter.testWeatherApi(city, mWeatherDataCallback); // Call Async API
             } catch (Exception e) {
                 Log.d(TAG, "Thread sleep error" + e);
             }
@@ -266,8 +277,8 @@ public class MainActivity extends AppCompatActivity {
                 mActivityRef.get().mProgressBar.setVisibility(View.VISIBLE);
             }
 
-            if (mGetWeatherRestAdapter == null)
-                mGetWeatherRestAdapter = new GetWeatherRestAdapter();
+            if (mWeatherRestAdapter == null)
+                mWeatherRestAdapter = new WeatherRestAdapter();
 
             mInProgress.set(true);
 
@@ -282,7 +293,7 @@ public class MainActivity extends AppCompatActivity {
                         // crash. You get 'HTTP/1.1 500 Internal Server Error' more often than
                         // you think.
                         Thread.sleep(10000);
-                        WeatherData data = mGetWeatherRestAdapter.testWeatherApiSync(city);
+                        WeatherData data = mWeatherRestAdapter.testWeatherApiSync(city);
                         Log.d(TAG, "Sync: Data: cod:" + data.getName() + ", cod:" + data.getCod()
                                 + ",Coord: (" + data.getLat() + "," + data.getLon()
                                 + "), Temp:" + data.getTemp()
