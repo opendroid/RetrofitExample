@@ -17,3 +17,4 @@ This is a sample project to show how to use Square Retrofit Library in your Andr
 5. Open issues: Did not check error issues. So app may crash on Retrofit errors.
 6. Openweather now requires you to use their API. Set your own API key in OPEN_WEATHER_API (GetWeatherRestAdapter.java), I have kept mine in case you need to do few minor tests.
 
+## Note for Retrofit2, use this Repo. https://github.com/opendroid/Retrofit2Example
